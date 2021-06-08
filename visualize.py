@@ -17,10 +17,11 @@ import pandas as pd
 
 PORT_NAME = '/dev/ttyUSB0'
 MAX_RANGE = 700
-log_file = open("./log.txt","w")
-classes = ["body", "straight hand", "curved hand"] #0, 1, 2
-
+classes = ["body", "thumb index", "curved hand", "straight hand"] #0, 1, 2, 3
 WRITE = False
+
+if WRITE:
+    log_file = open("./log.txt","w")
 
 # grabs data from RPLidar A1
 def get_data():
@@ -159,13 +160,16 @@ def extract_features(cluster_map):
 
 def main():
     try:
-        #fig, ax = plt.subplots(figsize=(12, 6))
+        fig, ax = plt.subplots(figsize=(12, 6))
         optics = OPTICS(min_samples=15)
         classifier = load('random_forest.joblib')
         if WRITE: 
             log_file.write("[")
-
+            
+        sample_count = 0
         while (True):
+            print(sample_count)
+            sample_count += 1
             # Grab and Process data
             scan = get_data()
             x = []
@@ -193,13 +197,11 @@ def main():
 
             # plot data
             plt.clf()
-            print()
             for cluster_key in feature_map.keys():
                 features = pd.DataFrame([feature_map[cluster_key].values()], columns=list(feature_map[cluster_key].keys())).dropna()
                 class_prediction = classifier.predict(features)
                 centroid = original_centroid_list[int(cluster_key)]
                 plt.text(centroid[0] + 20, centroid[1] + 20, classes[class_prediction[0]])
-                print(classes[class_prediction[0]])
 
             plt.plot(0, 0, marker='o', markersize=10, color="red")
             plt.scatter(XY[:, 0], XY[:, 1], c=cluster_labels, s=50, cmap='viridis')
